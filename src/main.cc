@@ -26,11 +26,9 @@ uv_stream_t *tcp;
 
 time_point_t start_time = Time::now();
 
-std::atomic<int> platform_count;
 std::atomic<int> device_count[max_platform_num];
 std::atomic<cl_platform_id> platforms[max_platform_num];
 std::atomic<cl_device_id> devices[max_platform_num][max_gpu_num];
-std::atomic<int> worker_count;
 std::atomic<uint64_t> total_mining_count;
 std::atomic<uint64_t> device_mining_count[max_platform_num][max_gpu_num];
 bool use_device[max_platform_num][max_gpu_num];
@@ -80,7 +78,7 @@ void mine(mining_worker_t *worker)
         worker->timer.data = worker;
         uv_timer_start(&worker->timer, mine_with_timer, 500, 0);
     } else {
-        printf("==== mine: %d %d %d\n", worker->platform_index, worker->device_index, worker->i);
+        // printf("==== mine: %d %d %d\n", worker->platform_index, worker->device_index, worker->i);
         mining_counts[to_mine_index].fetch_add(mining_steps);
         setup_template(worker, load_template(to_mine_index));
 
@@ -122,6 +120,7 @@ void CL_CALLBACK worker_kernel_callback(cl_event event, cl_int status, void *dat
         store_worker_found_good_hash(worker, true);
         submit_new_block(worker);
     }
+    // printf("==== hash %d\n", worker->hasher->hash_count);
 
     mining_template_t *template_ptr = load_worker__template(worker);
     job_t *job = template_ptr->job;
@@ -182,17 +181,22 @@ void alloc_buffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf)
 
 void log_hashrate(uv_timer_t *timer)
 {
-    // time_point_t current_time = Time::now();
-    // if (current_time > start_time)
-    // {
-    //     duration_t eplased = current_time - start_time;
-    //     printf("hashrate: %.0f MH/s ", total_mining_count.load() / eplased.count() / 1000000);
-    //     for (int i = 0; i < gpu_count; i++)
-    //     {
-    //         printf("gpu%d: %.0f MH/s ", i, device_mining_count[i].load() / eplased.count() / 1000000);
-    //     }
-    //     printf("\n");
-    // }
+    time_point_t current_time = Time::now();
+    if (current_time > start_time)
+    {
+        duration_t eplased = current_time - start_time;
+        printf("hashrate: %.0f MH/s ", total_mining_count.load() / eplased.count() / 1000000);
+        size_t gpu_index = 0;
+        for (uint32_t i = 0; i < max_platform_num * max_gpu_num; i++)
+        {
+            mining_worker_t *worker = &((mining_worker_t *)mining_workers)[i * 4];
+            if (((mining_worker_t *)mining_workers)[i].on_service)
+            {
+                printf("gpu%d: %.0f MH/s ", i, device_mining_count[worker->platform_index][worker->device_index].load() / eplased.count() / 1000000);
+            }
+        }
+        printf("\n");
+    }
 }
 
 uint8_t read_buf[2048 * 1024 * chain_nums];

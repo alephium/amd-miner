@@ -291,7 +291,7 @@ typedef struct
     uint32_t to_group;
 
     uint32_t hash_count;
-    int found_good_hash;
+    uint32_t found_good_hash;
 } blake3_hasher;
 
 INLINE void blake3_hasher_hash(const blake3_hasher *self, uint8_t *input, size_t input_len, uint8_t *out)
@@ -358,9 +358,9 @@ INLINE void copy_good_nonce(blake3_hasher *thread_hasher, blake3_hasher *global_
     }
 }
 
-__kernel void blake3_hasher_mine(__global blake3_hasher *global_hasher)
+__kernel void blake3_hasher_mine(volatile __global blake3_hasher *global_hasher)
 {
-    __local blake3_hasher local_hasher;
+    blake3_hasher local_hasher;
     local_hasher = *global_hasher;
     blake3_hasher *hasher = &local_hasher;
 
@@ -387,7 +387,7 @@ __kernel void blake3_hasher_mine(__global blake3_hasher *global_hasher)
         if (check_hash(hasher->hash, hasher->target, hasher->from_group, hasher->to_group))
         {
             printf("tid %d found it !!\n", tid);
-            if (atomic_add(&global_hasher->found_good_hash, 1) == 0)
+            if (atomic_cmpxchg(&global_hasher->found_good_hash, 0, 1) == 0)
             {
                 copy_good_nonce(hasher, global_hasher);
             }
@@ -395,5 +395,6 @@ __kernel void blake3_hasher_mine(__global blake3_hasher *global_hasher)
             return;
         }
     }
-    atomic_add(&global_hasher->hash_count, hasher->hash_count);
+    volatile __global uint32_t *hash_count = &global_hasher->hash_count;
+    atomic_add(hash_count, hasher->hash_count);
 }

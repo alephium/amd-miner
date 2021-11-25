@@ -27,7 +27,7 @@ typedef struct
     uint32_t to_group;
 
     uint32_t hash_count;
-    int found_good_hash;
+    uint32_t found_good_hash;
 } blake3_hasher;
 
 typedef struct mining_worker_t {
