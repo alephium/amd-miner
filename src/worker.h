@@ -74,8 +74,6 @@ void mining_worker_init(mining_worker_t *self, cl_uint platform_index, cl_platfo
     CHECK(self->context = clCreateContext(prop, 1, &self->device_id, NULL, NULL, &err));
     self->kernel_source = load_kernel_source("src/blake3.cu");
     self->kernel_size = strlen(self->kernel_source);
-    // printf("==== source %s\n", kernel_source);
-    printf("============ \n");
     CHECK(self->program = clCreateProgramWithSource(self->context, 1, (const char**)&self->kernel_source, &self->kernel_size, &err));
     TRY(clBuildProgram(self->program, 1, &self->device_id, NULL, NULL, NULL));
     self->grid_size = 64 * 256;

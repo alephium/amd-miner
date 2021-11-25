@@ -78,7 +78,6 @@ void mine(mining_worker_t *worker)
         worker->timer.data = worker;
         uv_timer_start(&worker->timer, mine_with_timer, 500, 0);
     } else {
-        // printf("==== mine: %d %d %d\n", worker->platform_index, worker->device_index, worker->i);
         mining_counts[to_mine_index].fetch_add(mining_steps);
         setup_template(worker, load_template(to_mine_index));
 
@@ -120,7 +119,6 @@ void CL_CALLBACK worker_kernel_callback(cl_event event, cl_int status, void *dat
         store_worker_found_good_hash(worker, true);
         submit_new_block(worker);
     }
-    // printf("==== hash %d\n", worker->hasher->hash_count);
 
     mining_template_t *template_ptr = load_worker__template(worker);
     job_t *job = template_ptr->job;

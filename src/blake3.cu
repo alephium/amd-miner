@@ -375,8 +375,6 @@ __kernel void blake3_hasher_mine(volatile __global blake3_hasher *global_hasher)
     uint64_t *short_nonce = (uint64_t *)hasher->buf;
     *short_nonce = (*short_nonce) / stride * stride + tid;
 
-    // printf("================ opencl %d %d %d %d\n", gridDim_x, blockDim_x, blockIdx_x, threadIdx_x);
-
     while (hasher->hash_count < mining_steps)
     {
         hasher->hash_count += 1;
