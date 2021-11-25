@@ -46,4 +46,17 @@ char *load_kernel_source(const char *source_file)
     return source_str;
 }
 
+void log_build_info(cl_program program, cl_device_id device_id)
+{
+    char *build_log;
+    size_t log_size;
+    clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
+    build_log = new char[log_size+1];
+    // Second call to get the log
+    clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, log_size, build_log, NULL);
+    build_log[log_size] = '\0';
+    printf("==== build === %s\n", build_log);
+    delete[] build_log;
+}
+
 #endif

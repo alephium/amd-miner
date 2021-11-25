@@ -76,18 +76,10 @@ void mining_worker_init(mining_worker_t *self, cl_uint platform_index, cl_platfo
     self->kernel_size = strlen(self->kernel_source);
     CHECK(self->program = clCreateProgramWithSource(self->context, 1, (const char**)&self->kernel_source, &self->kernel_size, &err));
     TRY(clBuildProgram(self->program, 1, &self->device_id, NULL, NULL, NULL));
+    // log_build_info(self->program, self->device_id);
+
     self->grid_size = 64 * 256;
     self->block_size = 256;
-
-    char *build_log;
-    size_t log_size;
-    clGetProgramBuildInfo(self->program, self->device_id, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
-    build_log = new char[log_size+1];
-    // Second call to get the log
-    clGetProgramBuildInfo(self->program, self->device_id, CL_PROGRAM_BUILD_LOG, log_size, build_log, NULL);
-    build_log[log_size] = '\0';
-    printf("==== build === %s\n", build_log);
-    delete[] build_log;
 
     size_t hasher_size = sizeof(blake3_hasher);
     self->hasher = (blake3_hasher *)malloc(hasher_size);
