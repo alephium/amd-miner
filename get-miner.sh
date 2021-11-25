@@ -12,9 +12,9 @@ echo "Installing build-essential libuv nvidia-cuda-toolkit"
 sudo apt install -y build-essential libuv1-dev nvidia-cuda-toolkit
 
 echo "Git cloning gpu-miner"
-git clone https://github.com/alephium/gpu-miner.git
+git clone https://github.com/alephium/amd-miner.git
 
 echo "Building the gpu miner"
-cd gpu-miner && make linux-gpu
+cd amd-miner && make linux-gpu
 
-echo "Your miner is built, you could run it with: gpu-miner/run-miner.sh"
+echo "Your miner is built, you could run it with: amd-miner/run-miner.sh"
