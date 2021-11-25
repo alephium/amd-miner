@@ -13,6 +13,7 @@
 #include "uv.h"
 #include "template.h"
 #include "opencl_util.h"
+#include "blake3.cu"
 
 typedef struct
 {
@@ -45,7 +46,7 @@ typedef struct mining_worker_t {
     size_t grid_size;
     size_t block_size;
 
-    char *kernel_source;
+    const char *kernel_source;
     size_t kernel_size;
 
     blake3_hasher *hasher;
@@ -72,7 +73,7 @@ void mining_worker_init(mining_worker_t *self, cl_uint platform_index, cl_platfo
 
     cl_context_properties prop[] = { CL_CONTEXT_PLATFORM, reinterpret_cast<cl_context_properties>(self->platform_id), 0 };
     CHECK(self->context = clCreateContext(prop, 1, &self->device_id, NULL, NULL, &err));
-    self->kernel_source = load_kernel_source("src/blake3.cu");
+    self->kernel_source = kernelSourceCode;
     self->kernel_size = strlen(self->kernel_source);
     CHECK(self->program = clCreateProgramWithSource(self->context, 1, (const char**)&self->kernel_source, &self->kernel_size, &err));
     TRY(clBuildProgram(self->program, 1, &self->device_id, NULL, NULL, NULL));

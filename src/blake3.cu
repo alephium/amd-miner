@@ -1,3 +1,4 @@
+const char *kernelSourceCode = R"(
 #define INLINE static inline
 
 #define group_nums 4
@@ -396,3 +397,4 @@ __kernel void blake3_hasher_mine(volatile __global blake3_hasher *global_hasher)
     volatile __global uint32_t *hash_count = &global_hasher->hash_count;
     atomic_add(hash_count, hasher->hash_count);
 }
+)";
