@@ -360,7 +360,8 @@ INLINE void copy_good_nonce(blake3_hasher *thread_hasher, blake3_hasher *global_
 
 __kernel void blake3_hasher_mine(__global blake3_hasher *global_hasher)
 {
-    blake3_hasher local_hasher = *global_hasher;
+    __local blake3_hasher local_hasher;
+    local_hasher = *global_hasher;
     blake3_hasher *hasher = &local_hasher;
 
     hasher->hash_count = 0;
@@ -373,6 +374,8 @@ __kernel void blake3_hasher_mine(__global blake3_hasher *global_hasher)
     int tid = threadIdx_x + blockIdx_x * blockDim_x;
     uint64_t *short_nonce = (uint64_t *)hasher->buf;
     *short_nonce = (*short_nonce) / stride * stride + tid;
+
+    // printf("================ opencl %d %d %d %d\n", gridDim_x, blockDim_x, blockIdx_x, threadIdx_x);
 
     while (hasher->hash_count < mining_steps)
     {

@@ -80,7 +80,7 @@ void mine(mining_worker_t *worker)
         worker->timer.data = worker;
         uv_timer_start(&worker->timer, mine_with_timer, 500, 0);
     } else {
-        printf("==== mine: %d %d\n", worker->platform_index, worker->device_index);
+        printf("==== mine: %d %d %d\n", worker->platform_index, worker->device_index, worker->i);
         mining_counts[to_mine_index].fetch_add(mining_steps);
         setup_template(worker, load_template(to_mine_index));
 
@@ -132,8 +132,9 @@ void CL_CALLBACK worker_kernel_callback(cl_event event, cl_int status, void *dat
     device_mining_count[worker->platform_index][worker->device_index].fetch_add(worker->hasher->hash_count);
 
     free_template(template_ptr);
-    worker->async.data = worker;
-    uv_async_send(&(worker->async));
+    // worker->async.data = worker;
+    // uv_async_send(&(worker->async));
+    mine(worker);
 }
 
 void start_mining()

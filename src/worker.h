@@ -45,6 +45,9 @@ typedef struct mining_worker_t {
     size_t grid_size;
     size_t block_size;
 
+    char *kernel_source;
+    size_t kernel_size;
+
     blake3_hasher *hasher;
     cl_mem device_hasher = NULL;
 
@@ -69,14 +72,12 @@ void mining_worker_init(mining_worker_t *self, cl_uint platform_index, cl_platfo
 
     cl_context_properties prop[] = { CL_CONTEXT_PLATFORM, reinterpret_cast<cl_context_properties>(self->platform_id), 0 };
     CHECK(self->context = clCreateContext(prop, 1, &self->device_id, NULL, NULL, &err));
-    CHECK(self->queue = clCreateCommandQueue(self->context, self->device_id, 0, &err));
-    char *kernel_source = load_kernel_source("src/blake3.cu");
-    size_t source_size = strlen(kernel_source);
+    self->kernel_source = load_kernel_source("src/blake3.cu");
+    self->kernel_size = strlen(self->kernel_source);
     // printf("==== source %s\n", kernel_source);
     printf("============ \n");
-    CHECK(self->program = clCreateProgramWithSource(self->context, 1, (const char**)&kernel_source, &source_size, &err));
+    CHECK(self->program = clCreateProgramWithSource(self->context, 1, (const char**)&self->kernel_source, &self->kernel_size, &err));
     TRY(clBuildProgram(self->program, 1, &self->device_id, NULL, NULL, NULL));
-    CHECK(self->kernel = clCreateKernel(self->program, "blake3_hasher_mine", &err));
     self->grid_size = 28 * 128;
     self->block_size = 128;
 
@@ -92,7 +93,6 @@ void mining_worker_init(mining_worker_t *self, cl_uint platform_index, cl_platfo
 
     size_t hasher_size = sizeof(blake3_hasher);
     self->hasher = (blake3_hasher *)malloc(hasher_size);
-    self->device_hasher = clCreateBuffer(self->context, CL_MEM_ALLOC_HOST_PTR, hasher_size, NULL, NULL);
 
     self->hasher = (blake3_hasher *)malloc(sizeof(blake3_hasher));
     memset(self->hasher->buf, 0, BLAKE3_BUF_CAP);
