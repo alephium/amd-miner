@@ -186,11 +186,10 @@ void log_hashrate(uv_timer_t *timer)
     {
         duration_t eplased = current_time - start_time;
         printf("hashrate: %.0f MH/s ", total_mining_count.load() / eplased.count() / 1000000);
-        size_t gpu_index = 0;
         for (uint32_t i = 0; i < max_platform_num * max_gpu_num; i++)
         {
             mining_worker_t *worker = &((mining_worker_t *)mining_workers)[i * 4];
-            if (((mining_worker_t *)mining_workers)[i].on_service)
+            if (((mining_worker_t *)mining_workers)[i * 4].on_service)
             {
                 printf("gpu%d: %.0f MH/s ", i, device_mining_count[worker->platform_index][worker->device_index].load() / eplased.count() / 1000000);
             }
