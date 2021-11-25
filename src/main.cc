@@ -129,8 +129,6 @@ void CL_CALLBACK worker_kernel_callback(cl_event event, cl_int status, void *dat
     device_mining_count[worker->platform_index][worker->device_index].fetch_add(worker->hasher->hash_count);
 
     free_template(template_ptr);
-    // worker->async.data = worker;
-    // uv_async_send(&(worker->async));
     mine(worker);
 }
 
@@ -334,12 +332,12 @@ int main(int argc, char **argv)
     {
         cl_uint device_count;
         TRY(clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_GPU, 0, NULL, &device_count));
+        printf("platform: %d has %d devices\n", i, device_count);
         cl_device_id *devices = (cl_device_id *)malloc(device_count * sizeof(cl_device_id));
         TRY(clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_GPU, device_count, devices, NULL));
         for (cl_uint j = 0; j < device_count; j++)
         {
             mining_workers_init(i, platforms[i], j, devices[j]);
-            printf("Platform: %d, Device: %d\n", i, j);
         }
     }
 
@@ -358,7 +356,7 @@ int main(int argc, char **argv)
             }
             else
             {
-                hostname_to_ip(broker_ip, argv[optind]);
+                hostname_to_ip(broker_ip, optarg);
             }
             printf("will connect to broker @%s:10973\n", broker_ip);
             break;
