@@ -78,8 +78,8 @@ void mining_worker_init(mining_worker_t *self, cl_uint platform_index, cl_platfo
     printf("============ \n");
     CHECK(self->program = clCreateProgramWithSource(self->context, 1, (const char**)&self->kernel_source, &self->kernel_size, &err));
     TRY(clBuildProgram(self->program, 1, &self->device_id, NULL, NULL, NULL));
-    self->grid_size = 28 * 128;
-    self->block_size = 128;
+    self->grid_size = 64 * 256;
+    self->block_size = 256;
 
     char *build_log;
     size_t log_size;
