@@ -182,12 +182,14 @@ void log_hashrate(uv_timer_t *timer)
     {
         duration_t eplased = current_time - start_time;
         printf("hashrate: %.0f MH/s ", total_mining_count.load() / eplased.count() / 1000000);
+        size_t gpu_index = 0;
         for (uint32_t i = 0; i < max_platform_num * max_gpu_num; i++)
         {
             mining_worker_t *worker = &((mining_worker_t *)mining_workers)[i * 4];
             if (((mining_worker_t *)mining_workers)[i * 4].on_service)
             {
-                printf("gpu%d: %.0f MH/s ", i, device_mining_count[worker->platform_index][worker->device_index].load() / eplased.count() / 1000000);
+                printf("gpu%ld: %.0f MH/s ", gpu_index, device_mining_count[worker->platform_index][worker->device_index].load() / eplased.count() / 1000000);
+                gpu_index += 1;
             }
         }
         printf("\n");
@@ -273,7 +275,7 @@ void on_connect(uv_connect_t *req, int status)
 {
     if (status < 0)
     {
-        fprintf(stderr, "connection error %d: might be that the full node is reachable\n", status);
+        fprintf(stderr, "connection error %d: might be that the full node is not reachable\n", status);
         exit(1);
     }
     printf("the server is connected %d %p\n", status, req);

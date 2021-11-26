@@ -345,7 +345,7 @@ INLINE void update_nonce(blake3_hasher *hasher, uint64_t delta)
     *short_nonce += delta;
 }
 
-INLINE void copy_good_nonce(blake3_hasher *thread_hasher, blake3_hasher *global_hasher)
+INLINE void copy_good_nonce(blake3_hasher *thread_hasher, volatile __global blake3_hasher *global_hasher)
 {
 #pragma unroll
     for (int i = 0; i < 24; i++)
