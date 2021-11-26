@@ -1,8 +1,8 @@
 # amd-miner
 
-CUDA capable PoW miner for Alephium.
+AMD capable PoW miner for Alephium base on OpenCL.
 
-Please make sure that you have installed Nvidia driver for you GPU. You could verify that by running the `nvidia-smi` command.
+Please make sure that you have installed AMD pro for you GPU.
 
 ### Ubuntu miner from source code
 

@@ -3,7 +3,7 @@
 set -eu
 
 echo "Installing build-essential libuv"
-sudo apt install -y build-essential libuv1-dev
+sudo apt install -y build-essential libuv1-dev opencl-headers
 
 echo "Git cloning gpu-miner"
 git clone https://github.com/alephium/amd-miner.git
