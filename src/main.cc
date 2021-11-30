@@ -399,6 +399,7 @@ int main(int argc, char **argv)
     {
         mining_worker_t *worker = &(((mining_worker_t *)mining_workers)[i]);
         if (worker->on_service) {
+            printf("===== %d %d %d\n", worker->platform_index, worker->device_index, worker->i);
             uv_async_init(loop, &(worker->async), mine_with_async);
             uv_timer_init(loop, &(worker->timer));
         }
