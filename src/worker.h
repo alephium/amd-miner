@@ -78,6 +78,7 @@ void mining_worker_init(mining_worker_t *self, cl_uint platform_index, cl_platfo
     CHECK(self->program = clCreateProgramWithSource(self->context, 1, (const char**)&self->kernel_source, &self->kernel_size, &err));
     TRY(clBuildProgram(self->program, 1, &self->device_id, NULL, NULL, NULL));
     // log_build_info(self->program, self->device_id);
+    CHECK(self->kernel = clCreateKernel(self->program, "blake3_hasher_mine", &err));
 
     self->grid_size = 64 * 256;
     self->block_size = 256;
