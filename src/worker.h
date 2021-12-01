@@ -77,9 +77,11 @@ void mining_worker_init(mining_worker_t *self, cl_uint platform_index, cl_platfo
     self->kernel_size = strlen(self->kernel_source);
     CHECK(self->program = clCreateProgramWithSource(self->context, 1, (const char**)&self->kernel_source, &self->kernel_size, &err));
     TRY(clBuildProgram(self->program, 1, &self->device_id, NULL, NULL, NULL));
-    // log_build_info(self->program, self->device_id);
+    log_build_info(self->program, self->device_id);
+    CHECK(self->kernel = clCreateKernel(self->program, "blake3_hasher_mine", &err));
+    CHECK(self->queue = clCreateCommandQueue(self->context, self->device_id, 0, &err));
 
-    self->grid_size = 64 * 256;
+    self->grid_size = 32 * 256;
     self->block_size = 256;
 
     size_t hasher_size = sizeof(blake3_hasher);

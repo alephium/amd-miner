@@ -17,10 +17,6 @@
 #include "getopt.h"
 #include "opencl_util.h"
 
-typedef std::chrono::high_resolution_clock Time;
-typedef std::chrono::duration<double> duration_t;
-typedef std::chrono::time_point<std::chrono::high_resolution_clock> time_point_t;
-
 uv_loop_t *loop;
 uv_stream_t *tcp;
 
@@ -129,7 +125,8 @@ void CL_CALLBACK worker_kernel_callback(cl_event event, cl_int status, void *dat
     device_mining_count[worker->platform_index][worker->device_index].fetch_add(worker->hasher->hash_count);
 
     free_template(template_ptr);
-    mine(worker);
+    worker->async.data = worker;
+    uv_async_send(&(worker->async));
 }
 
 void start_mining()
@@ -314,6 +311,7 @@ int hostname_to_ip(char *ip_address, char *hostname)
 
 int main(int argc, char **argv)
 {
+    setbuf(stdout, NULL);
     #ifdef _WIN32
     WSADATA wsa;
     // current winsocket version is 2.2
