@@ -1,0 +1,119 @@
+name: build artifacts
+on: [push]
+
+jobs:
+  build-linux-artifact:
+    name: build-linux-artifact
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: Jimver/cuda-toolkit@v0.2.5
+        id: cuda-toolkit
+        with:
+          cuda: '11.5.0'
+          sub-packages: '["nvcc"]'
+          method: 'network'          
+      
+      - name: Install Dependency
+        run: |
+             temp_file=$(mktemp --suffix=.deb)
+             curl -L https://github.com/conan-io/conan/releases/latest/download/conan-ubuntu-64.deb -o $temp_file
+             sudo apt install $temp_file
+
+      - name: Build miner
+        run: ./make.sh
+
+      - name: Rename miner
+        run: mv bin/amd-miner bin/amd-miner_$(git rev-parse --short "$GITHUB_SHA")
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: linux-binary
+          path: bin/amd-miner_*
+
+  build-windows-artifact:
+    name: build-windows-artifact
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: amd64
+
+      - uses: Jimver/cuda-toolkit@v0.2.5
+        id: cuda-toolkit
+        with:
+          cuda: '11.5.0'
+          sub-packages: '["nvcc", "cudart", "visual_studio_integration"]'
+          method: 'network'
+
+      - run: echo "conan==1.42.2" > requirements.txt
+      
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+          architecture: 'x64'
+          cache: 'pip'
+          
+      - name: Install Dependency
+        run: pip install -r requirements.txt
+
+      - name: Build Miner
+        run: .\build.ps1
+
+      - name: Rename Miner
+        run: |
+             $fileName = git rev-parse --short HEAD
+             mv bin/amd-miner.exe "bin/amd-miner_$fileName.exe"
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: windows-binary
+          path: bin/amd-miner_*.exe
+  
+  release:
+    name: release
+    runs-on: ubuntu-latest
+    # If both artifacts were built properly and this is a tag
+    if: ${{ needs.build-linux-artifact.result == 'success' && needs.build-linux-artifact.result == 'success' && startsWith(github.ref, 'refs/tags/') }}
+    needs: [build-linux-artifact, build-windows-artifact]
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Get linux artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: linux-binary
+              
+      - name: Get Windows artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: windows-binary
+
+      - name: Get the version (Release prep)
+        id: get_version
+        run: |
+          version=$(echo ${GITHUB_REF/refs\/tags\//} | cut -c 2-)
+          echo ::set-output name=VERSION::$version
+        shell: bash
+
+      - name: Generate miners checksums (Release prep)
+        run: |
+             filename=$(git rev-parse --short HEAD)
+             mv "amd-miner_$filename" "alephium-${{ steps.get_version.outputs.VERSION }}-amd-miner-linux"
+             mv "amd-miner_$filename.exe" "alephium-${{ steps.get_version.outputs.VERSION }}-amd-miner-windows.exe"
+             sha256sum "alephium-${{ steps.get_version.outputs.VERSION }}-amd-miner-linux" > "alephium-${{ steps.get_version.outputs.VERSION }}-amd-miner-linux.checksum"
+             sha256sum "alephium-${{ steps.get_version.outputs.VERSION }}-amd-miner-windows.exe" > "alephium-${{ steps.get_version.outputs.VERSION }}-amd-miner-windows.exe.checksum"
+             
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            alephium-${{ steps.get_version.outputs.VERSION }}-amd-miner-linux
+            alephium-${{ steps.get_version.outputs.VERSION }}-amd-miner-linux.checksum
+            alephium-${{ steps.get_version.outputs.VERSION }}-amd-miner-windows.exe
+            alephium-${{ steps.get_version.outputs.VERSION }}-amd-miner-windows.exe.checksum
