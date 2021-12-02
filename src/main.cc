@@ -309,6 +309,10 @@ int hostname_to_ip(char *ip_address, char *hostname)
     return 0;
 }
 
+#ifndef MINER_VERSION
+#define MINER_VERSION "unknown"
+#endif
+
 int main(int argc, char **argv)
 {
     setbuf(stdout, NULL);
@@ -322,6 +326,8 @@ int main(int argc, char **argv)
 	exit(1);
     }
     #endif
+    
+    printf("Running amd-miner version : %s\n", MINER_VERSION);
 
     cl_uint platform_count;
     TRY(clGetPlatformIDs(0, NULL, &platform_count));
