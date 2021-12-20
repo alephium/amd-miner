@@ -347,14 +347,18 @@ int main(int argc, char **argv)
         }
     }
 
+    int port = 10973;
     char broker_ip[16];
     strcpy(broker_ip, "127.0.0.1");
 
     int command;
-    while ((command = getopt(argc, argv, "g:a:")) != -1)
+    while ((command = getopt(argc, argv, "p:g:a:")) != -1)
     {
         switch (command)
         {
+        case 'p':
+            port = atoi(optarg);
+            break;
         case 'a':
             if (is_valid_ip_address(optarg))
             {
@@ -364,7 +368,6 @@ int main(int argc, char **argv)
             {
                 hostname_to_ip(broker_ip, optarg);
             }
-            printf("will connect to broker @%s:10973\n", broker_ip);
             break;
 
         // case 'g':
@@ -390,13 +393,15 @@ int main(int argc, char **argv)
         }
     }
 
+    printf("will connect to broker @%s:%d\n", broker_ip, port);
+
     loop = uv_default_loop();
 
     uv_tcp_t *socket = (uv_tcp_t *)malloc(sizeof(uv_tcp_t));
     uv_tcp_init(loop, socket);
     uv_connect_t *connect = (uv_connect_t *)malloc(sizeof(uv_connect_t));
     struct sockaddr_in dest;
-    uv_ip4_addr(broker_ip, 10973, &dest);
+    uv_ip4_addr(broker_ip, port, &dest);
     uv_tcp_connect(connect, socket, (const struct sockaddr *)&dest, on_connect);
 
     for (int i = 0; i < max_worker_num; i++)
