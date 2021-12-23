@@ -83,7 +83,7 @@ bool expire_template_for_new_block(mining_template_t *template_ptr)
 
     mining_template_t *latest_template = load_template(chain_index);
     if (latest_template) {
-        printf("new block mined, remove the outdated template\n");
+        printf("new solutio found, remove the outdated template\n");
         store_template(chain_index, NULL);
         free_template(latest_template);
         return true;
