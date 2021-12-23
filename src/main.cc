@@ -338,17 +338,29 @@ int main(int argc, char **argv)
     cl_platform_id *platforms = (cl_platform_id *)malloc(platform_count * sizeof(cl_platform_id));
     TRY(clGetPlatformIDs(platform_count, platforms, NULL));
     cl_int err;
+    char* info;
+    size_t info_size;
     for (cl_uint i = 0; i < platform_count; i++)
     {
-        cl_uint device_count = 0;
-        TRY(clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_GPU, 0, NULL, &device_count));
-        printf("platform: %d has %d devices\n", i, device_count);
-        cl_device_id *devices = (cl_device_id *)malloc(device_count * sizeof(cl_device_id));
-        TRY(clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_GPU, device_count, devices, NULL));
-        for (cl_uint j = 0; j < device_count; j++)
-        {
-            mining_workers_init(i, platforms[i], j, devices[j]);
+        clGetPlatformInfo(platforms[i], CL_PLATFORM_NAME, 0, NULL, &info_size);
+        info = (char*) malloc(info_size);
+        clGetPlatformInfo(platforms[i], CL_PLATFORM_NAME, info_size, info, NULL);
+        printf("platform: %s\n", info);
+
+        if (strcmp(info, "NVIDIA CUDA") != 0) {
+            cl_uint device_count = 0;
+            TRY(clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_GPU, 0, NULL, &device_count));
+            printf("platform: %d has %d devices\n", i, device_count);
+            cl_device_id *devices = (cl_device_id *)malloc(device_count * sizeof(cl_device_id));
+            TRY(clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_GPU, device_count, devices, NULL));
+            for (cl_uint j = 0; j < device_count; j++)
+            {
+                mining_workers_init(i, platforms[i], j, devices[j]);
+            }
+        } else {
+            printf("ignoring nvida cards\n");
         }
+        free(info);
     }
 
     int port = 10973;
