@@ -12,7 +12,7 @@ amdgpu-pro-install --opencl=legacy,pal --headless
 
 You could download and run the pre-built miner from [Github release page](https://github.com/alephium/amd-miner/releases). Note that your anti-virus might warn about the pre-built miner.
 
-You could specify the miner api with `-a <IP>` parameter.
+You could run the miner with `-a <IP> -p <PORT>` parameters.
 
 ### Miner from source code
 
