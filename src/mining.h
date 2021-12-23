@@ -19,7 +19,7 @@ void start_worker_mining(mining_worker_t *worker)
     reset_worker(worker);
 
     cl_int err;
-    time_point_t start = Time::now();
+    // time_point_t start = Time::now();
 
     size_t hasher_size = sizeof(blake3_hasher);
     worker->device_hasher = clCreateBuffer(worker->context, CL_MEM_READ_WRITE, hasher_size, NULL, NULL);
@@ -31,7 +31,7 @@ void start_worker_mining(mining_worker_t *worker)
     TRY(clEnqueueReadBuffer(worker->queue, worker->device_hasher, CL_FALSE, 0, hasher_size, worker->hasher, 0, NULL, &worker_completed));
     TRY(clSetEventCallback(worker_completed, CL_COMPLETE, worker_kernel_callback, worker));
    
-    duration_t elapsed = Time::now() - start;
+    // duration_t elapsed = Time::now() - start;
     // printf("=== mining time: %fs\n", elapsed.count());
 }
 

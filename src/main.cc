@@ -248,23 +248,27 @@ void on_read(uv_stream_t *server, ssize_t nread, const uv_buf_t *buf)
         return;
     }
 
-    switch (message->kind)
-    {
-    case JOBS:
-        for (int i = 0; i < message->jobs->len; i++)
+    if (message) {
+        switch (message->kind)
         {
-            update_templates(message->jobs->jobs[i]);
-        }
-        start_mining_if_needed();
-        break;
+        case JOBS:
+            for (int i = 0; i < message->jobs->len; i++)
+            {
+                update_templates(message->jobs->jobs[i]);
+            }
+            start_mining_if_needed();
+            break;
 
-    case SUBMIT_RESULT:
-        printf("submitted: %d -> %d: %d \n", message->submit_result->from_group, message->submit_result->to_group, message->submit_result->status);
-        break;
+        case SUBMIT_RESULT:
+            printf("submitted: %d -> %d: %d \n", message->submit_result->from_group, message->submit_result->to_group, message->submit_result->status);
+            break;
+        }
+
+        free_server_message_except_jobs(message);
     }
 
     free(buf->base);
-    free_server_message_except_jobs(message);
+
     // uv_close((uv_handle_t *) server, free_close_cb);
 }
 
@@ -329,14 +333,14 @@ int main(int argc, char **argv)
     
     printf("Running amd-miner version : %s\n", MINER_VERSION);
 
-    cl_uint platform_count;
+    cl_uint platform_count = 0;
     TRY(clGetPlatformIDs(0, NULL, &platform_count));
     cl_platform_id *platforms = (cl_platform_id *)malloc(platform_count * sizeof(cl_platform_id));
     TRY(clGetPlatformIDs(platform_count, platforms, NULL));
     cl_int err;
     for (cl_uint i = 0; i < platform_count; i++)
     {
-        cl_uint device_count;
+        cl_uint device_count = 0;
         TRY(clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_GPU, 0, NULL, &device_count));
         printf("platform: %d has %d devices\n", i, device_count);
         cl_device_id *devices = (cl_device_id *)malloc(device_count * sizeof(cl_device_id));
@@ -416,7 +420,7 @@ int main(int argc, char **argv)
 
     uv_timer_t log_timer;
     uv_timer_init(loop, &log_timer);
-    uv_timer_start(&log_timer, log_hashrate, 5000, 5000);
+    uv_timer_start(&log_timer, log_hashrate, 5000, 20000);
 
     uv_run(loop, UV_RUN_DEFAULT);
 
