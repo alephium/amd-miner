@@ -29,12 +29,17 @@ std::atomic<uint64_t> total_mining_count;
 std::atomic<uint64_t> device_mining_count[max_platform_num][max_gpu_num];
 bool use_device[max_platform_num][max_gpu_num];
 
+int port = 10973;
+char broker_ip[16];
+uv_timer_t reconnect_timer;
+uv_tcp_t *uv_socket;
+uv_connect_t *uv_connect;
+
 void on_write_end(uv_write_t *req, int status)
 {
     if (status < 0)
     {
         fprintf(stderr, "error on_write_end %d", status);
-        exit(1);
     }
     free(req);
 }
@@ -229,12 +234,23 @@ server_message_t *decode_buf(const uv_buf_t *buf, ssize_t nread)
     }
 }
 
+void connect_to_broker();
+
+void try_to_reconnect(uv_timer_t *timer){
+    read_blob.len = 0;
+    free(uv_socket);
+    free(uv_connect);
+    connect_to_broker();
+    uv_timer_stop(timer);
+}
+
 void on_read(uv_stream_t *server, ssize_t nread, const uv_buf_t *buf)
 {
     if (nread < 0)
     {
-        fprintf(stderr, "error on_read %ld: might be that the full node is not synced, or miner wallets are not setup\n", nread);
-        exit(1);
+        fprintf(stderr, "error on_read %ld: might be that the full node is not synced, or miner wallets are not setup, try to reconnect\n", nread);
+        uv_timer_start(&reconnect_timer, try_to_reconnect, 5000, 0);
+        return;
     }
 
     if (nread == 0)
@@ -276,13 +292,24 @@ void on_connect(uv_connect_t *req, int status)
 {
     if (status < 0)
     {
-        fprintf(stderr, "connection error %d: might be that the full node is not reachable\n", status);
-        exit(1);
+        fprintf(stderr, "connection error %d: might be that the full node is not reachable, try to reconnect\n", status);
+        uv_timer_start(&reconnect_timer, try_to_reconnect, 5000, 0);
+        return;
     }
     printf("the server is connected %d %p\n", status, req);
 
     tcp = req->handle;
     uv_read_start(req->handle, alloc_buffer, on_read);
+}
+
+void connect_to_broker(){
+    uv_socket = (uv_tcp_t *)malloc(sizeof(uv_tcp_t));
+    uv_tcp_init(loop, uv_socket);
+    uv_tcp_nodelay(uv_socket, 1);
+    uv_connect = (uv_connect_t *)malloc(sizeof(uv_connect_t));
+    struct sockaddr_in dest;
+    uv_ip4_addr(broker_ip, port, &dest);
+    uv_tcp_connect(uv_connect, uv_socket, (const struct sockaddr *)&dest, on_connect);
 }
 
 bool is_valid_ip_address(char *ip_address)
@@ -363,8 +390,6 @@ int main(int argc, char **argv)
         free(info);
     }
 
-    int port = 10973;
-    char broker_ip[16];
     strcpy(broker_ip, "127.0.0.1");
 
     int command;
@@ -411,15 +436,13 @@ int main(int argc, char **argv)
 
     printf("will connect to broker @%s:%d\n", broker_ip, port);
 
-    loop = uv_default_loop();
+    #ifdef __linux__
+    signal(SIGPIPE, SIG_IGN);
+    #endif
 
-    uv_tcp_t *socket = (uv_tcp_t *)malloc(sizeof(uv_tcp_t));
-    uv_tcp_init(loop, socket);
-    uv_tcp_nodelay(socket, 1);
-    uv_connect_t *connect = (uv_connect_t *)malloc(sizeof(uv_connect_t));
-    struct sockaddr_in dest;
-    uv_ip4_addr(broker_ip, port, &dest);
-    uv_tcp_connect(connect, socket, (const struct sockaddr *)&dest, on_connect);
+    loop = uv_default_loop();
+    uv_timer_init(loop, &reconnect_timer);
+    connect_to_broker();
 
     for (int i = 0; i < max_worker_num; i++)
     {
