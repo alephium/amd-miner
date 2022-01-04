@@ -1,4 +1,6 @@
 const char *kernelSourceCode = R"(
+#include "log.h"
+
 #define INLINE static inline
 
 #define group_nums 4
@@ -385,7 +387,7 @@ __kernel void blake3_hasher_mine(volatile __global blake3_hasher *global_hasher)
 
         if (check_hash(hasher->hash, hasher->target, hasher->from_group, hasher->to_group))
         {
-            printf("tid %d found it !!\n", tid);
+            LOG("tid %d found it !!\n", tid);
             if (atomic_cmpxchg(&global_hasher->found_good_hash, 0, 1) == 0)
             {
                 copy_good_nonce(hasher, global_hasher);

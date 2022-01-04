@@ -9,13 +9,14 @@
 #else
 #include <CL/cl.h>
 #endif
+#include "log.h"
 
 #define TRY(x)                                                                                  \
     {                                                                                           \
         cl_int err = (x);                                                                       \
         if (err != CL_SUCCESS)                                                                  \
         {                                                                                       \
-            printf("opencl error %d calling '%s' (%s line %d)\n", err, #x, __FILE__, __LINE__); \
+            LOG("opencl error %d calling '%s' (%s line %d)\n", err, #x, __FILE__, __LINE__); \
         }                                                                                       \
     }
 
@@ -24,7 +25,7 @@
         x;                                                                                      \
         if (err != CL_SUCCESS)                                                                  \
         {                                                                                       \
-            printf("opencl error %d calling '%s' (%s line %d)\n", err, #x, __FILE__, __LINE__); \
+            LOG("opencl error %d calling '%s' (%s line %d)\n", err, #x, __FILE__, __LINE__); \
         }                                                                                       \
     }
 
@@ -37,7 +38,7 @@ void log_build_info(cl_program program, cl_device_id device_id)
     // Second call to get the log
     clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, log_size, build_log, NULL);
     build_log[log_size] = '\0';
-    printf("==== build === %s\n", build_log);
+    LOG("==== build === %s\n", build_log);
     delete[] build_log;
 }
 

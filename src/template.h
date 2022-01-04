@@ -11,6 +11,7 @@
 #include "messages.h"
 #include "uv.h"
 #include "constants.h"
+#include "log.h"
 
 typedef struct mining_template_t {
     job_t *job;
@@ -83,7 +84,7 @@ bool expire_template_for_new_block(mining_template_t *template_ptr)
 
     mining_template_t *latest_template = load_template(chain_index);
     if (latest_template) {
-        printf("new solutio found, remove the outdated template\n");
+        LOG("new solutio found, remove the outdated template\n");
         store_template(chain_index, NULL);
         free_template(latest_template);
         return true;
